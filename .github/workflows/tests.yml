@@ -1,0 +1,45 @@
+name: tests
+
+# Run the test suite (plus the project's other quality gates: rustfmt and
+# clippy) on every push to main so the commit's status is visible in the
+# GitHub UI. The image build/publish workflow (docker.yml) is separate and
+# runs only on v* tags.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Same toolchain family as the Docker build (rust:1 = latest stable).
+      # clippy + rustfmt are included because the project's quality gates
+      # require zero clippy warnings and clean formatting.
+      - name: Set up Rust (stable, with clippy and rustfmt)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      # Cache ~/.cargo and target/ between runs; keyed on Cargo.lock.
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+
+      # All 35 tests are pure unit tests (render/slug/auth/models) — no
+      # database is required; the app talks to PostgreSQL only at runtime.
+      - name: Formatting check
+        run: cargo fmt --check
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test
