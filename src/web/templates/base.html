@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1e6fbb">
+<title>{% block title %}openpost{% endblock title %}</title>
+<link rel="stylesheet" href="/static/css/main.css">
+{% block head %}{% endblock head %}
+</head>
+<body class="{% block body_class %}{% endblock body_class %}">
+<header class="site-header">
+  <nav class="site-nav">
+    <a class="brand" href="/">openpost</a>
+    <div class="nav-right">
+      {% if logged_in %}
+        <a href="/my">My posts</a>
+        <a href="/settings">Settings</a>
+        <form method="post" action="/logout" class="inline-form">
+          <button type="submit" class="linklike">Log out</button>
+        </form>
+      {% else %}
+        <a href="/write">Write</a>
+        <a href="/login">Log in</a>
+      {% endif %}
+    </div>
+  </nav>
+</header>
+<main class="container">
+{% block content %}{% endblock content %}
+</main>
+<footer class="site-footer">
+  <p>openpost — publish instantly. Your access token is your account; if you lose it, it cannot be recovered.</p>
+  <p><a href="/api-docs">API reference</a></p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{% if page_path %}Edit post{% else %}Write{% endif %} — openpost{% endblock title %}
+{% block body_class %}page-tool{% endblock body_class %}
+{% block head %}
+<link rel="stylesheet" href="/static/css/editor.css">
+{% endblock head %}
+{% block content %}
+<div id="editor" class="editor" data-page-path="{{ page_path }}">
+  <div id="token-notice" class="token-notice hidden">
+    <h3>Save your access token</h3>
+    <p>
+      Your token is your account. Store it somewhere safe — it is the only way
+      to access and edit your posts, and it cannot be recovered or reset.
+    </p>
+    <code id="token-value"></code>
+    <div class="token-actions">
+      <button type="button" id="btn-copy-token" class="btn">Copy token</button>
+      <button type="button" id="btn-go" class="btn btn-primary">Continue to post</button>
+    </div>
+  </div>
+  <input id="title" type="text" placeholder="Title" maxlength="256" value="{{ page_title }}">
+  <div class="editor-toolbar">
+    <select id="format" aria-label="Content format">
+      <option value="markdown"{% if page_format != "html" %} selected{% endif %}>Markdown</option>
+      <option value="html"{% if page_format == "html" %} selected{% endif %}>HTML</option>
+    </select>
+    <input id="author-name" type="text" placeholder="Author name (optional)" maxlength="128" value="{{ author_name }}">
+    <input id="author-url" type="url" placeholder="Author URL (optional)" value="{{ author_url }}">
+    <button type="button" id="btn-preview" class="btn">Preview</button>
+    <button type="button" id="btn-split" class="btn">Split screen</button>
+    <button type="button" id="btn-publish" class="btn btn-primary">{% if page_path %}Save{% else %}Publish{% endif %}</button>
+  </div>
+  <div class="editor-panes">
+    <textarea id="content" placeholder="Write your post in Markdown or HTML…" spellcheck="false">{{ page_content }}</textarea>
+    <div id="preview-pane" class="preview post-body hidden"></div>
+  </div>
+</div>
+<script src="/static/js/editor.js" defer></script>
+{% endblock content %}

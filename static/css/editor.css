@@ -1,0 +1,154 @@
+/* openpost — editor styles (source editing + preview / split screen) */
+
+#title {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: clamp(1.3rem, 4.5vw, 1.6rem);
+  font-weight: 700;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.5rem 0;
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+#title:focus { outline: none; border-bottom-color: var(--accent); }
+
+/*
+ * Sticky toolbar: Publish / Preview / Split stay reachable while
+ * scrolling long posts, especially on phones.
+ */
+.editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--sans);
+}
+
+.editor-toolbar select {
+  flex: 0 0 auto;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+  min-width: 0;
+}
+
+.editor-toolbar input {
+  width: auto;
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.editor-toolbar .btn { flex: 0 0 auto; }
+
+#content {
+  min-height: 55vh;
+  min-height: 55dvh;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  resize: vertical;
+  width: 100%;
+}
+
+.editor-panes { display: block; }
+
+/* single-pane preview mode: source hidden, preview shown */
+.editor.preview-mode #content { display: none; }
+.editor.preview-mode .editor-panes { display: block; }
+
+/* split screen: source and preview side by side */
+.editor.split .editor-panes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+.editor.split #content { height: auto; min-height: 55vh; min-height: 55dvh; }
+
+.preview {
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  overflow-wrap: break-word;
+  overflow-y: auto;
+  background: #fcfcfc;
+  min-height: 10rem;
+  /* Long previews scroll internally instead of growing the page forever. */
+  max-height: 75vh;
+  max-height: 75dvh;
+}
+
+.preview.hidden { display: none; }
+
+/* token notice after first publish (shown at the top of the editor) */
+.token-notice {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: #f0f7ff;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+}
+.token-notice h3 { margin-top: 0; }
+.token-notice code {
+  display: block;
+  padding: 0.5rem 0.6rem;
+  margin: 0.5rem 0;
+  user-select: all;
+  word-break: break-all;
+}
+.token-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.token-notice.hidden { display: none; }
+
+/*
+ * Two-pane editing needs roughly >=480px per pane to be usable; stack the
+ * panes below 960px instead of squeezing two cramped columns.
+ */
+@media (max-width: 960px) {
+  .editor.split .editor-panes { grid-template-columns: 1fr; }
+}
+
+/*
+ * Landscape phones and tablets are wide enough for usable side-by-side
+ * panes even below 960px; must come after the stacking rule above.
+ */
+@media (min-width: 700px) and (orientation: landscape) {
+  .editor.split .editor-panes { grid-template-columns: 1fr 1fr; }
+}
+
+/* Landscape phones / short viewports: let the panes use the short height
+ * fully instead of leaving the page half-empty. */
+@media (orientation: landscape) and (max-height: 500px) {
+  #content { min-height: 70vh; min-height: 70dvh; }
+  .preview { max-height: 85vh; max-height: 85dvh; }
+}
+
+@media (min-width: 1920px) {
+  #content { font-size: 1rem; }
+}
+
+@media (max-width: 640px) {
+  /*
+   * Keep toolbar inputs and the textarea at >=16px so iOS Safari does not
+   * auto-zoom the page when they gain focus.
+   */
+  .editor-toolbar select,
+  .editor-toolbar input,
+  #content { font-size: 1rem; }
+
+  /* Inputs take full rows; buttons share one even row below them. */
+  .editor-toolbar input { flex-basis: 100%; }
+  .editor-toolbar .btn { flex: 1 1 auto; }
+
+  #content { min-height: 45vh; }
+}

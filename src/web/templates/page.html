@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — openpost{% endblock title %}
+{% block body_class %}page-reading{% endblock body_class %}
+{% block content %}
+<article class="post">
+  <h1 class="post-title">{{ title }}</h1>
+  <p class="post-meta">
+    {% if author_url %}
+      <a href="{{ author_url }}" rel="noopener nofollow">{{ author_name | default(value="Anonymous") }}</a>
+    {% else %}
+      {{ author_name | default(value="Anonymous") }}
+    {% endif %}
+    · {{ created }} · {{ views }} views
+  </p>
+  <div class="post-body">{{ page_html | safe }}</div>
+</article>
+{% endblock content %}

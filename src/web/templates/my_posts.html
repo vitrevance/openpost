@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}My posts — openpost{% endblock title %}
+{% block body_class %}page-tool{% endblock body_class %}
+{% block content %}
+<h1>My posts</h1>
+{% if pages %}
+<div class="table-wrap">
+  <table class="post-table">
+    <thead>
+      <tr><th>Title</th><th>Views</th><th>Created</th><th>Updated</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in pages %}
+      <tr>
+        <td><a href="/{{ p.path }}">{{ p.title }}</a></td>
+        <td>{{ p.views }}</td>
+        <td>{{ p.created }}</td>
+        <td>{{ p.updated }}</td>
+        <td class="actions">
+          <a href="/edit/{{ p.path }}">Edit</a>
+          <button type="button" class="linklike danger delete-btn" data-path="{{ p.path }}">Delete</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>No posts yet. <a href="/write">Write your first one</a>.</p>
+{% endif %}
+<script src="/static/js/my_posts.js" defer></script>
+{% endblock content %}

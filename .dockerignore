@@ -1,0 +1,6 @@
+# Keep the build context small — especially the Rust target dir.
+target/
+.git/
+memory-bank/
+plan/
+*.log

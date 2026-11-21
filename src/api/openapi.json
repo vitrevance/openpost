@@ -1,0 +1,611 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "openpost API",
+    "version": "1.0.0",
+    "description": "REST API for openpost, a minimal instant-publishing platform. Timestamps are Unix seconds."
+  },
+  "servers": [
+    { "url": "/" }
+  ],
+  "tags": [
+    { "name": "Pages", "description": "Create, read, edit, delete, and list published pages." },
+    { "name": "Accounts", "description": "Account management and token login." },
+    { "name": "Preview", "description": "Render content to sanitized HTML (used by the editor)." },
+    { "name": "System", "description": "Health checks." }
+  ],
+  "paths": {
+    "/api/ping": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "operationId": "ping",
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/account": {
+      "post": {
+        "tags": ["Accounts"],
+        "summary": "Create an account",
+        "description": "Creates a new account. The server generates a UUIDv4 which is both the account id and the access token — persist the returned `id`, it cannot be recovered.",
+        "operationId": "createAccount",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateAccountRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created; `id` is the access token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccountResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "get": {
+        "tags": ["Accounts"],
+        "summary": "Get the authenticated account",
+        "operationId": "getAccount",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Current account",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccountResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Accounts"],
+        "summary": "Update the authenticated account",
+        "description": "Partial update: an omitted optional field keeps its current value; a provided field (even an empty string) replaces or clears it. `short_name` falls back to the current value when omitted or empty.",
+        "operationId": "updateAccount",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateAccountRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated account",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccountResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Accounts"],
+        "summary": "Validate an access token",
+        "description": "Validates a token; on success the response also sets the `op_token` browser cookie.",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token is valid (also refreshes the cookie)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccountResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Accounts"],
+        "summary": "Log out (clear the browser cookie)",
+        "operationId": "logout",
+        "responses": {
+          "204": { "description": "Cookie cleared" }
+        }
+      }
+    },
+    "/api/pages": {
+      "post": {
+        "tags": ["Pages"],
+        "summary": "Create (publish) a page",
+        "description": "Publishes a page. **No authentication required**: if no valid token is supplied, a fresh anonymous account is created and its token is returned in the response body (and set as the `op_token` cookie) — save it, it cannot be recovered.",
+        "operationId": "createPage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Page published; `token` is present only when a new anonymous account was created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      },
+      "get": {
+        "tags": ["Pages"],
+        "summary": "List the authenticated account's pages",
+        "operationId": "listPages",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Page count to return (1-200, default 50)",
+            "schema": { "type": "integer", "format": "int64", "default": 50, "minimum": 1, "maximum": 200 }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Skip this many pages (for pagination, default 0)",
+            "schema": { "type": "integer", "format": "int64", "default": 0, "minimum": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pages owned by the account (newest first)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageListResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/pages/{path}": {
+      "parameters": [
+        {
+          "name": "path",
+          "in": "path",
+          "required": true,
+          "description": "Page slug (8-character base62 identifier)",
+          "schema": { "type": "string", "pattern": "^[0-9A-Za-z]{8}$" }
+        }
+      ],
+      "get": {
+        "tags": ["Pages"],
+        "summary": "Get a page",
+        "description": "Fetches a page as JSON. **Does not increment the view counter** (only browser visits to the HTML page do). By default `content` is omitted; pass `?return_content=true` to include the raw source.",
+        "operationId": "getPage",
+        "parameters": [
+          {
+            "name": "return_content",
+            "in": "query",
+            "required": false,
+            "description": "Include the raw `content` source in the response",
+            "schema": { "type": "boolean", "default": false }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The page",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Pages"],
+        "summary": "Edit a page",
+        "description": "Replaces a page you own. `title` and `content` are required and fully replace the current values; `author_name`/`author_url` are replaced (omitting them clears both); `content_format` defaults to `markdown` when omitted — always send it explicitly. A missing or foreign-owned page returns 401/404 without revealing ownership.",
+        "operationId": "editPage",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EditPageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated page",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Pages"],
+        "summary": "Delete a page",
+        "operationId": "deletePage",
+        "security": [{ "bearerAuth": [] }, { "cookieAuth": [] }],
+        "responses": {
+          "204": { "description": "Page deleted" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/pages/{path}/views": {
+      "parameters": [
+        {
+          "name": "path",
+          "in": "path",
+          "required": true,
+          "description": "Page slug (8-character base62 identifier)",
+          "schema": { "type": "string", "pattern": "^[0-9A-Za-z]{8}$" }
+        }
+      ],
+      "get": {
+        "tags": ["Pages"],
+        "summary": "Get a page's view count",
+        "description": "Fetches only the view counter (increments nothing).",
+        "operationId": "getPageViews",
+        "responses": {
+          "200": {
+            "description": "View count",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PageViewsResponse" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/preview": {
+      "post": {
+        "tags": ["Preview"],
+        "summary": "Render content to sanitized HTML",
+        "description": "Renders Markdown or HTML source to sanitized HTML without creating or modifying anything — used by the editor's live preview.",
+        "operationId": "previewContent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rendered, sanitized HTML",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreviewResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/api/openapi.json": {
+      "get": {
+        "tags": ["System"],
+        "summary": "This OpenAPI specification",
+        "operationId": "getOpenapiSpec",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.0.3 document (JSON)",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Your account token: `Authorization: Bearer <uuid>`"
+      },
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "op_token",
+        "description": "HttpOnly cookie set automatically by the web UI on first publish or login"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request (bad JSON, invalid fields)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid token",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "(Unused — kept for reference; the API returns 401 instead to avoid revealing ownership)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No page with that slug",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error message"
+          }
+        }
+      },
+      "AccountResponse": {
+        "type": "object",
+        "description": "Note: `id` IS the access token — treat it like a password.",
+        "required": ["id", "short_name"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Account UUID — also your access token"
+          },
+          "short_name": {
+            "type": "string",
+            "description": "Display name of the account owner"
+          },
+          "author_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Default author name used on new pages"
+          },
+          "author_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Default author link (prefilled by the web editor)"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix seconds"
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "required": ["short_name"],
+        "properties": {
+          "short_name": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Display name of the account owner (1-64 characters)"
+          },
+          "author_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "author_url": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UpdateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "short_name": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "Omitted or empty keeps the current value"
+          },
+          "author_name": {
+            "type": "string",
+            "maxLength": 128,
+            "nullable": true,
+            "description": "Omitted keeps current value; empty string clears it"
+          },
+          "author_url": {
+            "type": "string",
+            "maxLength": 512,
+            "nullable": true,
+            "description": "Omitted keeps current value; empty string clears it"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Your account token"
+          }
+        }
+      },
+      "ContentFormat": {
+        "type": "string",
+        "enum": ["markdown", "html"],
+        "default": "markdown",
+        "description": "How `content` is interpreted: Markdown (GFM) or raw HTML. Defaults to `markdown` when omitted — always send it explicitly when editing HTML pages"
+      },
+      "CreatePageRequest": {
+        "type": "object",
+        "required": ["title", "content"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 256, "description": "1-256 characters, non-empty" },
+          "content": { "type": "string", "maxLength": 262144, "description": "Markdown or HTML source (at most 256 KiB)" },
+          "content_format": { "$ref": "#/components/schemas/ContentFormat" },
+          "author_name": { "type": "string", "nullable": true },
+          "author_url": { "type": "string", "nullable": true }
+        }
+      },
+      "EditPageRequest": {
+        "type": "object",
+        "required": ["title", "content"],
+        "description": "Full replacement, not a patch: `title` and `content` always overwrite; omitted `author_name`/`author_url` are cleared; `content_format` defaults to `markdown` when omitted.",
+        "properties": {
+          "title": { "type": "string", "maxLength": 256 },
+          "content": { "type": "string", "maxLength": 262144 },
+          "content_format": { "$ref": "#/components/schemas/ContentFormat" },
+          "author_name": { "type": "string", "nullable": true },
+          "author_url": { "type": "string", "nullable": true }
+        }
+      },
+      "PageSummary": {
+        "type": "object",
+        "required": ["path", "url", "title", "views", "created_at", "updated_at"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^[0-9A-Za-z]{8}$",
+            "description": "Page slug"
+          },
+          "url": { "type": "string", "description": "Absolute public URL of the page" },
+          "title": { "type": "string" },
+          "views": {
+            "type": "integer",
+            "format": "int64",
+            "description": "HTML page view counter"
+          },
+          "created_at": { "type": "integer", "format": "int64", "description": "Unix seconds" },
+          "updated_at": { "type": "integer", "format": "int64", "description": "Unix seconds" }
+        }
+      },
+      "PageListResponse": {
+        "type": "object",
+        "required": ["total_count", "pages"],
+        "properties": {
+          "total_count": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Total pages owned by the account (ignores limit/offset)"
+          },
+          "pages": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PageSummary" }
+          }
+        }
+      },
+      "PageViewsResponse": {
+        "type": "object",
+        "required": ["path", "views"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^[0-9A-Za-z]{8}$" },
+          "views": { "type": "integer", "format": "int64" }
+        }
+      },
+      "PageResponse": {
+        "type": "object",
+        "required": ["path", "url", "title", "views", "created_at", "updated_at", "content_format"],
+        "properties": {
+          "path": { "type": "string", "pattern": "^[0-9A-Za-z]{8}$" },
+          "url": { "type": "string", "description": "Absolute public URL of the page" },
+          "title": { "type": "string" },
+          "views": { "type": "integer", "format": "int64" },
+          "created_at": { "type": "integer", "format": "int64", "description": "Unix seconds" },
+          "updated_at": { "type": "integer", "format": "int64", "description": "Unix seconds" },
+          "content_format": { "$ref": "#/components/schemas/ContentFormat" },
+          "content": {
+            "type": "string",
+            "nullable": true,
+            "description": "Raw source — always present on create/edit responses; on GET only with `?return_content=true`"
+          },
+          "author_name": { "type": "string", "nullable": true },
+          "author_url": { "type": "string", "nullable": true },
+          "token": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Present only on 201 when a new anonymous account was created — this is your access token, save it"
+          }
+        }
+      },
+      "PreviewRequest": {
+        "type": "object",
+        "required": ["content", "content_format"],
+        "properties": {
+          "content": { "type": "string" },
+          "content_format": { "$ref": "#/components/schemas/ContentFormat" }
+        }
+      },
+      "PreviewResponse": {
+        "type": "object",
+        "required": ["html"],
+        "properties": {
+          "html": { "type": "string", "description": "Sanitized rendered HTML" }
+        }
+      }
+    }
+  }
+}

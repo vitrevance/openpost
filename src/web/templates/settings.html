@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Settings — openpost{% endblock title %}
+{% block body_class %}page-tool{% endblock body_class %}
+{% block content %}
+<h1>Settings</h1>
+<form method="post" action="/settings" class="settings-form">
+  <label>Short name
+    <input type="text" name="short_name" value="{{ short_name }}" required maxlength="64">
+  </label>
+  <label>Author name
+    <input type="text" name="author_name" value="{{ author_name }}" maxlength="128">
+  </label>
+  <label>Author URL
+    <input type="url" name="author_url" value="{{ author_url }}">
+  </label>
+  <button type="submit" class="btn btn-primary">Save</button>
+</form>
+<section class="token-section">
+  <h2>Your access token</h2>
+  <p>
+    This token is your user ID and your login. Anyone who has it can access
+    and edit your posts — treat it like a password.
+  </p>
+  <code class="token">{{ token }}</code>
+  <button type="button" id="btn-copy-token" class="btn">Copy</button>
+  <p class="hint">If you lose this token, there is no recovery.</p>
+</section>
+<script>
+document.getElementById('btn-copy-token').addEventListener('click', function () {
+  var el = document.querySelector('.token');
+  navigator.clipboard.writeText(el.textContent.trim()).then(function () {
+    var b = document.getElementById('btn-copy-token');
+    b.textContent = 'Copied!';
+    setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+  });
+});
+</script>
+{% endblock content %}

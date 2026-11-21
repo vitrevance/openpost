@@ -1,0 +1,32 @@
+# openpost — app + PostgreSQL.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: openpost
+      POSTGRES_PASSWORD: openpost
+      POSTGRES_DB: openpost
+    volumes:
+      - openpost-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openpost -d openpost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://openpost:openpost@db:5432/openpost?sslmode=disable
+      BIND_ADDR: 0.0.0.0:3000
+      BASE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  openpost-pgdata:

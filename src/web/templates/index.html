@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block body_class %}page-reading{% endblock body_class %}
+{% block content %}
+<section class="hero">
+  <h1>Publish instantly.</h1>
+  <p class="hero-sub">
+    Write in Markdown or HTML, publish to a shareable link in one click.
+    No signup, no email — an access token is created for you automatically.
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="/write">Write a post</a>
+    <a class="btn" href="/login">Log in with token</a>
+  </div>
+  <p class="hero-note">
+    Save your access token after your first publish — it is the only way to
+    access and edit your posts later. There is no recovery mechanism.
+  </p>
+</section>
+{% endblock content %}

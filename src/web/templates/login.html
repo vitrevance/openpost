@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log in — openpost{% endblock title %}
+{% block body_class %}page-reading{% endblock body_class %}
+{% block content %}
+<h1>Log in</h1>
+<p>
+  Enter your access token — the UUID you received when your account was
+  created (on first publish or via <code>POST /api/account</code>).
+</p>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form method="post" action="/login" class="login-form">
+  <input type="text" name="token" placeholder="Access token" required autofocus autocomplete="off">
+  <button type="submit" class="btn btn-primary">Log in</button>
+</form>
+<p class="hint">If you lose your token there is no way to recover it or your posts.</p>
+{% endblock content %}

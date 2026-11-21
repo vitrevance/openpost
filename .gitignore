@@ -1,0 +1,34 @@
+# --- Rust build output (never commit) ---
+/target/
+
+# --- Secrets / local configuration (decided: no .env files in this repo) ---
+.env
+.env.*
+
+# --- Editor / IDE junk ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs / runtime junk ---
+*.log
+*.pid
+
+# --- Planning / agent working files (not part of the product) ---
+/.clinerules/
+/plantarget/
+/plan/
+/memory-bank/
+
+# Root-level working notes/plans, but keep the README (project file).
+/*.md
+!README.md
+
+# --- sqlx offline query data (not used here: runtime-checked queries) ---
+.sqlx/
